@@ -16,7 +16,7 @@ RUN apt-get update \
   openssh-server \
   mysql-server \
   supervisor \
-  remote-login-service
+  xinetd
 
 
 RUN mkdir -p /lost+found \

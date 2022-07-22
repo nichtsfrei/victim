@@ -1,0 +1,378 @@
+diff --git a/chef/cookbooks/iptables/README.md b/chef/cookbooks/iptables/README.md
+index 7af5b56..6a48fb7 100644
+--- a/chef/cookbooks/iptables/README.md
++++ b/chef/cookbooks/iptables/README.md
+@@ -62,9 +62,7 @@ To enable port 80, e.g. in an `my_httpd` cookbook, create the following template
+ This template would be located at: `my_httpd/templates/default/http.erb`. Then within your recipe call:
+ 
+ ```ruby
+-iptables_rule 'http' do
+-  action :enable
+-end
++
+ ```
+ 
+ To redirect port 80 to local port 8080, e.g., in the aforementioned `my_httpd` cookbook, create the following template:
+@@ -80,37 +78,23 @@ Please note, that we explicitly add name of the table (being _*nat_ in this exam
+ This would most likely go in the cookbook, `my_httpd/templates/default/http_8080.erb`. Then to use it in `recipe[httpd]`:
+ 
+ ```ruby
+-iptables_rule 'http_8080' do
+-  action :enable
+-end
++
+ ```
+ 
+ To create a rule without using a template resource use the `lines` property (you can optionally specify `table` when using `lines`):
+ 
+ ```ruby
+-iptables_rule 'http_8080' do
+-  lines '-A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080'
+-  table :nat
+-end
++
+ ```
+ 
+ Additionally, a rule can be marked as sensitive so it's contents does not get output to the the console or logged with the sensitive property set to `true`. The mode of the generated rule file can be set with the filemode property:
+ 
+ ```ruby
+-iptables_rule 'http_8080' do
+-  lines '-A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080'
+-  table :nat
+-  sensitive true
+-end
++
+ ```
+ 
+ ```ruby
+-iptables_rule 'http_8080' do
+-  lines '-A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080'
+-  table :nat
+-  sensitive true
+-  filemode '0600'
+-end
++
+ ```
+ 
+ To get attribute-driven rules you can (for example) feed a hash of attributes into named iptables.d files like this:
+@@ -123,9 +107,7 @@ node.default['iptables']['rules']['http_443'] = [
+ ]
+ 
+ node['iptables']['rules'].map do |rule_name, rule_body|
+-  iptables_rule rule_name do
+-    lines [ rule_body ].flatten.join("\n")
+-  end
++  
+ end
+ ```
+ 
+diff --git a/chef/cookbooks/metasploitable/recipes/apache.rb b/chef/cookbooks/metasploitable/recipes/apache.rb
+index a838fe8..7b1e777 100644
+--- a/chef/cookbooks/metasploitable/recipes/apache.rb
++++ b/chef/cookbooks/metasploitable/recipes/apache.rb
+@@ -6,9 +6,7 @@
+ 
+ include_recipe 'iptables::default'
+ 
+-iptables_rule '1_apache' do
+-  lines "-A INPUT -p tcp --dport 80 -j ACCEPT"
+-end
++
+ 
+ package 'apache2' do
+   action :install
+diff --git a/chef/cookbooks/metasploitable/recipes/apache_continuum.rb b/chef/cookbooks/metasploitable/recipes/apache_continuum.rb
+index e6d6b17..005774b 100644
+--- a/chef/cookbooks/metasploitable/recipes/apache_continuum.rb
++++ b/chef/cookbooks/metasploitable/recipes/apache_continuum.rb
+@@ -6,9 +6,7 @@
+ 
+ include_recipe 'iptables::default'
+ 
+-iptables_rule '01_apache_continuum' do
+-  lines "-A INPUT -p tcp --dport 8080 -j ACCEPT"
+-end
++
+ 
+ package 'openjdk-6-jre'
+ package 'openjdk-6-jdk'
+diff --git a/chef/cookbooks/metasploitable/recipes/chatbot.rb b/chef/cookbooks/metasploitable/recipes/chatbot.rb
+index 891002d..69867ce 100644
+--- a/chef/cookbooks/metasploitable/recipes/chatbot.rb
++++ b/chef/cookbooks/metasploitable/recipes/chatbot.rb
+@@ -10,13 +10,9 @@ include_recipe 'metasploitable::ruby23'
+ include_recipe 'metasploitable::nodejs'
+ include_recipe 'iptables::default'
+ 
+-iptables_rule '1_chatbot_ui' do
+-  lines "-A INPUT -p tcp --dport 80 -j ACCEPT"
+-end
+ 
+-iptables_rule '1_chatbot_nodejs' do
+-  lines "-A INPUT -p tcp --dport 3000 -j ACCEPT"
+-end
++
++
+ 
+ package 'unzip'
+ 
+diff --git a/chef/cookbooks/metasploitable/recipes/cups.rb b/chef/cookbooks/metasploitable/recipes/cups.rb
+index ad9a0d4..b70af43 100644
+--- a/chef/cookbooks/metasploitable/recipes/cups.rb
++++ b/chef/cookbooks/metasploitable/recipes/cups.rb
+@@ -15,9 +15,7 @@ cookbook_file '/etc/cups/cupsd.conf' do
+   mode '0644'
+ end
+ 
+-iptables_rule '1_cups' do
+-  lines "-A INPUT -p tcp --dport 631 -j ACCEPT"
+-end
++
+ 
+ service 'cups' do
+   action [:enable, :restart]
+diff --git a/chef/cookbooks/metasploitable/recipes/drupal.rb b/chef/cookbooks/metasploitable/recipes/drupal.rb
+index 6d47543..c60efa0 100644
+--- a/chef/cookbooks/metasploitable/recipes/drupal.rb
++++ b/chef/cookbooks/metasploitable/recipes/drupal.rb
+@@ -60,11 +60,11 @@ end
+ 
+ bash "create drupal database and inject data" do
+   code <<-EOH
+-    mysql -h 127.0.0.1 --user="root" --password="sploitme" --execute="CREATE DATABASE drupal;"
+-    mysql -h 127.0.0.1 --user="root" --password="sploitme" --execute="GRANT SELECT, INSERT, DELETE, CREATE, DROP, INDEX, ALTER ON drupal.* TO 'root'@'localhost' IDENTIFIED BY 'sploitme';"
+-    mysql -h 127.0.0.1 --user="root" --password="sploitme" drupal < #{File.join(files_path, 'drupal.sql')}
++
++
++
+   EOH
+-  not_if "mysql -h 127.0.0.1 --user=\"root\" --password=\"sploitme\" --execute=\"SHOW DATABASES LIKE 'drupal'\" | grep -c drupal"
++
+ end
+ 
+ # This step is necessary because Drupal rewrites our 5_of_hearts.png,
+diff --git a/chef/cookbooks/metasploitable/recipes/flags.rb b/chef/cookbooks/metasploitable/recipes/flags.rb
+index 8b13cb4..4051719 100644
+--- a/chef/cookbooks/metasploitable/recipes/flags.rb
++++ b/chef/cookbooks/metasploitable/recipes/flags.rb
+@@ -19,7 +19,7 @@ cookbook_file '/home/artoo_detoo/music/10_of_clubs.wav' do
+ end
+ 
+ # 7 of Diamonds
+-include_recipe 'metasploitable::docker'
++
+ 
+ directory '/opt/docker' do
+   mode '0770'
+@@ -35,17 +35,9 @@ cookbook_file '/opt/docker/7_of_diamonds.zip' do
+   mode '0700'
+ end
+ 
+-docker_image '7_of_diamonds' do
+-    action :build_if_missing
+-    source '/opt/docker/'
+-end
+ 
+-docker_container '7_of_diamonds' do
+-    action :run_if_missing
+-    restart_policy 'always'
+-    tty true
+-    open_stdin true
+-end
++
++
+ 
+ file '/opt/docker/7_of_diamonds.zip' do
+   action :delete
+@@ -139,11 +131,11 @@ if ENV['MS3_LINUX_HARD']
+ 
+   bash "load 8 of hearts into DB" do
+     code <<-EOH
+-    mysql -h 127.0.0.1 --user="root" --password="sploitme" --execute="CREATE DATABASE super_secret_db;"
+-    mysql -h 127.0.0.1 --user="root" --password="sploitme" --execute="GRANT SELECT, INSERT, DELETE, CREATE, DROP, INDEX, ALTER ON drupal.* TO 'root'@'localhost' IDENTIFIED BY 'sploitme';"
+-    mysql -h 127.0.0.1 --user="root" --password="sploitme" super_secret_db < #{File.join(Chef::Config[:file_cache_path], 'cookbooks', 'metasploitable', 'files', 'flags', 'super_secret_db.sql')}
++
++
++
+     EOH
+-    not_if "mysql -h 127.0.0.1 --user=\"root\" --password=\"sploitme\" --execute=\"SHOW DATABASES LIKE 'super_secret_db'\" | grep -c drupal"
++
+   end
+ 
+   # Joker - red
+diff --git a/chef/cookbooks/metasploitable/recipes/iptables.rb b/chef/cookbooks/metasploitable/recipes/iptables.rb
+index 83c0c78..4ebca73 100644
+--- a/chef/cookbooks/metasploitable/recipes/iptables.rb
++++ b/chef/cookbooks/metasploitable/recipes/iptables.rb
+@@ -6,26 +6,14 @@
+ 
+ include_recipe 'iptables::default'
+ 
+-iptables_rule '00_established' do
+-  lines '-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT'
+-end
+ 
+-iptables_rule '00_lo_allow_in' do
+-  lines '-I INPUT -i lo -j ACCEPT'
+-end
+ 
+-iptables_rule '00_lo_allow_out' do
+-  lines '-I OUTPUT -o lo -j ACCEPT'
+-end
+ 
+-iptables_rule '01_ssh' do
+-  lines "-A INPUT -p tcp --dport 22 -j ACCEPT"
+-end
+ 
+-iptables_rule '01_icmp' do
+-  lines "-A INPUT -p icmp -j ACCEPT"
+-end
+ 
+-iptables_rule '999_drop_all' do
+-  lines '-A INPUT -j DROP'
+-end
++
++
++
++
++
++
+diff --git a/chef/cookbooks/metasploitable/recipes/knockd.rb b/chef/cookbooks/metasploitable/recipes/knockd.rb
+index 474c70a..3ae91e9 100644
+--- a/chef/cookbooks/metasploitable/recipes/knockd.rb
++++ b/chef/cookbooks/metasploitable/recipes/knockd.rb
+@@ -22,9 +22,7 @@ execute 'remove_carriage_returns' do
+     command "sed -i -e 's/\r//g' /etc/default/knockd"
+ end
+ 
+-iptables_rule '1_knockd' do
+-  lines "-I FORWARD 1 -p tcp -m tcp --dport #{node[:flags][:five_of_diamonds][:vuln_port]} -j DROP"
+-end
++
+ 
+ service 'knockd' do
+   action [:enable, :start]
+diff --git a/chef/cookbooks/metasploitable/recipes/mysql.rb b/chef/cookbooks/metasploitable/recipes/mysql.rb
+index e3b8ab4..9542db3 100644
+--- a/chef/cookbooks/metasploitable/recipes/mysql.rb
++++ b/chef/cookbooks/metasploitable/recipes/mysql.rb
+@@ -6,16 +6,9 @@
+ 
+ include_recipe 'iptables::default'
+ 
+-iptables_rule '1_mysql' do
+-  lines "-A INPUT -p tcp --dport 3306 -j ACCEPT"
+-end
+ 
+-mysql_service 'default' do
+-  initial_root_password "#{node[:mysql][:root_password]}"
+-  bind_address '0.0.0.0'
+-  port '3306'
+-  action [:create, :start]
+-end
++
++
+ 
+ mysql_client 'default' do
+     action :create
+diff --git a/chef/cookbooks/metasploitable/recipes/payroll_app.rb b/chef/cookbooks/metasploitable/recipes/payroll_app.rb
+index 65a7185..8bc0660 100644
+--- a/chef/cookbooks/metasploitable/recipes/payroll_app.rb
++++ b/chef/cookbooks/metasploitable/recipes/payroll_app.rb
+@@ -32,7 +32,7 @@ end
+ 
+ bash 'create payroll database and import data' do
+   code <<-EOH
+-    mysql -S /var/run/mysql-default/mysqld.sock --user="root" --password="#{node[:mysql][:root_password]}" --execute="DROP DATABASE IF EXISTS payroll; CREATE DATABASE payroll;"
+-    mysql -S /var/run/mysql-default/mysqld.sock --user="root" --password="#{node[:mysql][:root_password]}" payroll < /tmp/payroll.sql
++
++
+   EOH
+ end
+diff --git a/chef/cookbooks/metasploitable/recipes/proftpd.rb b/chef/cookbooks/metasploitable/recipes/proftpd.rb
+index 14b5b89..450bd4b 100644
+--- a/chef/cookbooks/metasploitable/recipes/proftpd.rb
++++ b/chef/cookbooks/metasploitable/recipes/proftpd.rb
+@@ -8,9 +8,7 @@
+ 
+ include_recipe 'iptables::default'
+ 
+-iptables_rule '1_proftpd' do
+-  lines "-A INPUT -p tcp --dport 21 -j ACCEPT"
+-end
++
+ 
+ include_recipe 'metasploitable::apache'
+ 
+@@ -42,10 +40,7 @@ remote_file "#{Chef::Config[:file_cache_path]}/#{proftpd_tar}" do
+   notifies :run, 'bash[compile and install proftpd]', :immediately
+ end
+ 
+-execute 'add hostname to /etc/hosts' do
+-  command "echo #{node[:ipaddress]} #{node[:hostname]} >> /etc/hosts"
+-  not_if 'grep -q "#{node[:ipaddress]} #{node[:hostname]}" /etc/hosts'
+-end
++
+ 
+ cookbook_file '/etc/init.d/proftpd' do
+   source 'proftpd/proftpd'
+diff --git a/chef/cookbooks/metasploitable/recipes/readme_app.rb b/chef/cookbooks/metasploitable/recipes/readme_app.rb
+index d7fce6c..9b3e85d 100644
+--- a/chef/cookbooks/metasploitable/recipes/readme_app.rb
++++ b/chef/cookbooks/metasploitable/recipes/readme_app.rb
+@@ -12,9 +12,7 @@ include_recipe 'iptables::default'
+ 
+ recipe_port = 3500
+ 
+-iptables_rule '1_readme_app' do
+-  lines "-A INPUT -p tcp --dport #{recipe_port} -j ACCEPT"
+-end
++
+ 
+ package 'git'
+ 
+diff --git a/chef/cookbooks/metasploitable/recipes/samba.rb b/chef/cookbooks/metasploitable/recipes/samba.rb
+index 5a5f8ed..1cb4ce0 100644
+--- a/chef/cookbooks/metasploitable/recipes/samba.rb
++++ b/chef/cookbooks/metasploitable/recipes/samba.rb
+@@ -7,9 +7,7 @@
+ #
+ include_recipe 'iptables::default'
+ 
+-iptables_rule '1_samba' do
+-  lines "-A INPUT -p tcp --dport 445 -j ACCEPT"
+-end
++
+ 
+ package 'samba'
+ 
+diff --git a/chef/cookbooks/metasploitable/recipes/sinatra.rb b/chef/cookbooks/metasploitable/recipes/sinatra.rb
+index 9f3dd01..99c216c 100644
+--- a/chef/cookbooks/metasploitable/recipes/sinatra.rb
++++ b/chef/cookbooks/metasploitable/recipes/sinatra.rb
+@@ -10,9 +10,7 @@ include_recipe 'metasploitable::sinatra'
+ include_recipe 'metasploitable::ruby23'
+ include_recipe 'iptables::default'
+ 
+-iptables_rule '1_sinatra' do
+-  lines "-A INPUT -p tcp --dport 8181 -j ACCEPT"
+-end
++
+ 
+ server_path = node['ec2'] ? 'aws' : 'virtualbox'
+ 
+diff --git a/chef/cookbooks/metasploitable/recipes/unrealircd.rb b/chef/cookbooks/metasploitable/recipes/unrealircd.rb
+index 94ff1f1..ae92a14 100644
+--- a/chef/cookbooks/metasploitable/recipes/unrealircd.rb
++++ b/chef/cookbooks/metasploitable/recipes/unrealircd.rb
+@@ -9,9 +9,7 @@
+ 
+ include_recipe 'iptables::default'
+ 
+-iptables_rule '1_unrealircd' do
+-  lines "-A INPUT -p tcp --dport 6697 -j ACCEPT"
+-end
++
+ 
+ unreal_tar = 'Unreal3.2.8.1_backdoor.tar.gz'
+ 

@@ -16,6 +16,7 @@ RUN apt-get update \
   openssh-server \
   mysql-server \
   supervisor \
+  rsh-redone-server \
   xinetd
 
 
@@ -28,6 +29,8 @@ COPY install_recipies /usr/local/src/install_recipies
 COPY solo.rb /opt/metasploitable3/solo.rb
 ## Run the recipes
 RUN chef-solo -c /opt/metasploitable3/solo.rb -o "$(cat /usr/local/src/install_recipies)"
+## According to https://people.redhat.com/kzak/docs/rsh-rlogin-howto.html
+COPY rsh /etc/xinetd.d/rsh
 
 ## Dependencies for services
 

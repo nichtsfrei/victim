@@ -7,8 +7,10 @@ CHEF_VERSION=15.1.36
 CHEF_P_VERSION=${CHEF_VERSION}-1
 ARCH=amd64
 CHEF_URL="https://packages.chef.io/files/stable/chef/${CHEF_VERSION}/ubuntu/14.04/chef_${CHEF_P_VERSION}_${ARCH}.deb"
+CONTAINER_ENGINE := $(shell command -v podman 2>/dev/null || command -v docker 2>/dev/null)
 
 all: get-recipies download-chef apply-patch build
+
 
 clean:
 	rm -rf .metasploitable3
@@ -28,6 +30,8 @@ remove-unwanted-recipies: get-recipies
 	perl -077 -i.old -pe "s/docker_.*do[\s\S]+?end//g" ${MS3CHEFPATH}/metasploitable/recipes/flags.rb
 	### remove /ets/hosts exension
 	perl -077 -i.old -pe "s/execute.*add hostname to.*do[\s\S]+?end//g" ${MS3CHEFPATH}/metasploitable/recipes/proftpd.rb
+	rm ${MS3CHEFPATH}/metasploitable/recipes/unrealircd.rb
+
 
 create-patch: remove-unwanted-recipies
 	cd ${MS3PATH} && git diff > ../remove-unwanted-recipies.patch && git reset --hard HEAD && git clean -fd
@@ -39,5 +43,4 @@ download-chef:
 	[ -f ${CHEF_DEB} ] || curl -L -o ${CHEF_DEB} ${CHEF_URL} 
 
 build: apply-patch download-chef
-	DOCKER_BUILDKIT=1 docker build -t nichtsfrei/victim -f Dockerfile .
-
+	${CONTAINER_ENGINE} build -t nichtsfrei/victim:latest -f Dockerfile .

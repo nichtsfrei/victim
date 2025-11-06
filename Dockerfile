@@ -48,6 +48,8 @@ RUN useradd --create-home -s /bin/bash vuln \
         && echo vuln:vuln | chpasswd \
 	&& usermod -aG sudo vuln
 
+RUN echo 'root:toor' | chpasswd 
+
 ## Copy files for services to start on container run
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY start.sh /start.sh
